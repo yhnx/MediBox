@@ -1,11 +1,12 @@
 #include "clock.h"
 
-
-//time variables
-int day = 0;
-int hour= 0;
+// time variables
+int hour = 0;
 int minute = 0;
 int second = 0;
+
+int day = 0;
+int month = 0;
 
 long timeNow;
 long timeLast;
@@ -18,8 +19,7 @@ bool alarm_triggered[] = {false, false};
 
 volatile bool off_the_alarm = false;
 
-
-//Note variable
+// Note variable
 int n_notes = 8;
 int C = 262;
 int D = 294;
@@ -31,15 +31,22 @@ int B = 494;
 int C_H = 523;
 int notes[] = {C, D, E, F, G, A, B, C_H};
 
-void IRAM_ATTR InterruptIt() 
+void IRAM_ATTR InterruptIt()
 {
   off_the_alarm = true;
 }
 
+
+
 void print_current_time()
 {
-  print_time(String(day)+ ":" + String(hour) + ":" + String(minute)+ ":" + String(second), 2, 20, 15);
+  print_time(Stringify(hour) + ":" + Stringify(minute) + ":" + Stringify(second), 2, 15, 17);
+}
 
+void print_current_time_day()
+{
+  print_current_time();
+  print_time(Stringify(day) + "/" + Stringify(month), 2, 35, 35);
 }
 
 void get_time_wifi()
@@ -47,67 +54,69 @@ void get_time_wifi()
   struct tm timeinfo;
   getLocalTime(&timeinfo);
 
+  char month_str[8];
   char day_str[8];
   char hour_str[8];
   char min_str[8];
   char sec_str[8];
-  
+
+  strftime(month_str, 8, "%m", &timeinfo);
   strftime(day_str, 8, "%d", &timeinfo);
   strftime(hour_str, 8, "%H", &timeinfo);
   strftime(min_str, 8, "%M", &timeinfo);
   strftime(sec_str, 8, "%S", &timeinfo);
 
+  month = atoi(month_str);
   day = atoi(day_str);
   minute = atoi(min_str);
   hour = atoi(hour_str);
   second = atoi(sec_str);
-
 }
 
 // Function to automatically update the current time
 void update_time()
 {
-  timeNow = millis() / 1000; // Number of seconds since the program started
+  timeNow = millis() / 1000;   // Number of seconds since the program started
   second = timeNow - timeLast; // Elapsed seconds
 
   // If a minute has passed
-  if (second >= 60) {
-      timeLast += 60;
-      minute += 1;
+  if (second >= 60)
+  {
+    timeLast += 60;
+    minute += 1;
   }
 
   // If an hour has passed
-  if (minute == 60) {
-      minute = 0;
-      hour += 1;
+  if (minute == 60)
+  {
+    minute = 0;
+    hour += 1;
   }
 
   // If a day has passed
-  if (hour == 24) {
-      hour = 0;
-      day += 1;
+  if (hour == 24)
+  {
+    hour = 0;
+    day += 1;
 
-      // Enable the alarms again
-      for (int i = 0; i < num_alarms; i++) {
-          alarm_triggered[i] = false;
-      }
+    // Enable the alarms again
+    for (int i = 0; i < num_alarms; i++)
+    {
+      alarm_triggered[i] = false;
+    }
   }
 }
-
 
 void ring_alarm()
 {
   display.clearDisplay();
 
-  
-
-  
-  while(!off_the_alarm) //cancelled variable added for extra robustness
+  while (!off_the_alarm) // cancelled variable added for extra robustness
   {
-    
+
     print_line("MEDICINE TIME", 2, 15, 15);
     digitalWrite(GREEN_LED, HIGH);
-    
+
     for (int i = 0; i < n_notes; i++)
     {
 
@@ -117,25 +126,21 @@ void ring_alarm()
       delay(2);
     }
 
-    //settling stuff down
+    // settling stuff down
     digitalWrite(GREEN_LED, LOW);
     display.clearDisplay();
-
   }
-
-
 }
 
-
-void check_alarm() //while updating time
+void check_alarm() // while updating time
 {
   display.clearDisplay();
   update_time();
-  print_current_time();
+  print_current_time_day();
 
   if (alarms_activated)
   {
-    for(int i =0; i < num_alarms; i++)
+    for (int i = 0; i < num_alarms; i++)
     {
       if (!alarm_triggered[i] && alarm_hours[i] == hour && alarm_minutes[i] == minute)
       {
@@ -143,7 +148,7 @@ void check_alarm() //while updating time
 
         ring_alarm();
 
-        //stopping the alarm from ringing further using the cancel button
+        // stopping the alarm from ringing further using the cancel button
         if (off_the_alarm)
         {
           alarm_triggered[i] = true;

@@ -11,6 +11,9 @@ void setup()
   pinMode(BUZZER, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
   pinMode(CANCEL_BUT, INPUT);
+  pinMode(OK_BUT, INPUT);
+  pinMode(UP_BUT, INPUT);
+  pinMode(DOWN_BUT, INPUT);
 
   // Initialize the display
   initialize_display();
@@ -24,11 +27,10 @@ void setup()
 
 void loop()
 {
-  // check_alarm();
+  check_alarm();
   if (digitalRead(OK_BUT) == LOW)
   {
     delay(200);
-    Serial.println("OK Button Pressed");
     go_to_menu();
   }
 }

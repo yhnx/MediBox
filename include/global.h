@@ -1,6 +1,8 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <Arduino.h>
+
 // OLED Parameters
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -16,5 +18,7 @@
 #define OK_BUT 32
 #define UP_BUT 33
 #define DOWN_BUT 35
+
+String Stringify(int number); // Convert an integer to a 2 digit string always
 
 #endif
