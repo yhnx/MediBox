@@ -1,5 +1,10 @@
 #include "clock.h"
 
+// time zone variables
+int UTC_OFFSET = 5 * 60 * 60 + 30 * 60; // UTC+5:30 in seconds
+int DST_OFFSET = 0;                     // No daylight saving time
+char *NTP_SERVER = "pool.ntp.org";
+
 // time variables
 int hour = 0;
 int minute = 0;
@@ -36,8 +41,6 @@ void IRAM_ATTR InterruptIt()
   off_the_alarm = true;
 }
 
-
-
 void print_current_time()
 {
   print_time(Stringify(hour) + ":" + Stringify(minute) + ":" + Stringify(second), 2, 15, 17);
@@ -49,62 +52,31 @@ void print_current_time_day()
   print_time(Stringify(day) + "/" + Stringify(month), 2, 35, 35);
 }
 
-void get_time_wifi()
+// Function to automatically update the current time
+void update_time()
 {
   struct tm timeinfo;
   getLocalTime(&timeinfo);
 
-  char month_str[8];
-  char day_str[8];
-  char hour_str[8];
-  char min_str[8];
-  char sec_str[8];
+  char hour_str[3];
+  char min_str[3];
+  char sec_str[3];
+  char day_str[3];
+  char month_str[3];
 
-  strftime(month_str, 8, "%m", &timeinfo);
-  strftime(day_str, 8, "%d", &timeinfo);
-  strftime(hour_str, 8, "%H", &timeinfo);
-  strftime(min_str, 8, "%M", &timeinfo);
-  strftime(sec_str, 8, "%S", &timeinfo);
+  // Getting the current time
+  strftime(hour_str, 3, "%H", &timeinfo);
+  strftime(min_str, 3, "%M", &timeinfo);
+  strftime(sec_str, 3, "%S", &timeinfo);
+  strftime(day_str, 3, "%d", &timeinfo);
+  strftime(month_str, 3, "%m", &timeinfo);
 
-  month = atoi(month_str);
-  day = atoi(day_str);
-  minute = atoi(min_str);
+  // Converting the strings to integers
   hour = atoi(hour_str);
+  minute = atoi(min_str);
   second = atoi(sec_str);
-}
-
-// Function to automatically update the current time
-void update_time()
-{
-  timeNow = millis() / 1000;   // Number of seconds since the program started
-  second = timeNow - timeLast; // Elapsed seconds
-
-  // If a minute has passed
-  if (second >= 60)
-  {
-    timeLast += 60;
-    minute += 1;
-  }
-
-  // If an hour has passed
-  if (minute == 60)
-  {
-    minute = 0;
-    hour += 1;
-  }
-
-  // If a day has passed
-  if (hour == 24)
-  {
-    hour = 0;
-    day += 1;
-
-    // Enable the alarms again
-    for (int i = 0; i < num_alarms; i++)
-    {
-      alarm_triggered[i] = false;
-    }
-  }
+  day = atoi(day_str);
+  month = atoi(month_str);
 }
 
 void ring_alarm()

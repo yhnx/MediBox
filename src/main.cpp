@@ -2,6 +2,7 @@
 #include "clock.h"
 #include "global.h"
 #include "menu.h"
+#include "dht22.h"
 
 void setup()
 {
@@ -18,8 +19,25 @@ void setup()
   // Initialize the display
   initialize_display();
 
+  // Initialize the DHT22 sensor
+  dhtSensor.setup(DHTPIN, DHTesp::DHT22);
+
+  WiFi.begin("Wokwi-GUEST", "", 6); // Connect to the WiFi network
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.println("Connecting to WiFi..");
+  }
+
+  display.clearDisplay();
+  print_line("Connected to WiFi");
+  delay(400);
+  display.clearDisplay();
+
+  configTime(UTC_OFFSET, DST_OFFSET, NTP_SERVER);
+
   // setup the time
-  get_time_wifi();
+  update_time();
 
   // Display the welcome message
   print_line("Welcome to MediBox");
@@ -33,4 +51,5 @@ void loop()
     delay(200);
     go_to_menu();
   }
+  check_temp();
 }
