@@ -22,15 +22,23 @@ void setup()
   // Initialize the DHT22 sensor
   dhtSensor.setup(DHTPIN, DHTesp::DHT22);
 
+  display.clearDisplay();
+
+  // Display the welcome message
+  // Display the welcome message
+  String messages[] = {"Welcome", User};
+  print_multi_line(messages, 2, 2, 10);
+
   WiFi.begin("Wokwi-GUEST", "", 6); // Connect to the WiFi network
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
-    Serial.println("Connecting to WiFi..");
+    String setup[] = {"Connecting", "WiFi..."};
+    print_multi_line(setup, 2, 2, 10);
   }
 
-  display.clearDisplay();
-  print_line("Connected to WiFi");
+  String connected[] = {"Connected", "to WiFi"};
+  print_multi_line(connected, 2, 2, 10);
   delay(400);
   display.clearDisplay();
 
@@ -38,9 +46,6 @@ void setup()
 
   // setup the time
   update_time();
-
-  // Display the welcome message
-  print_line("Welcome to MediBox");
 }
 
 void loop()

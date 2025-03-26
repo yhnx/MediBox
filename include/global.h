@@ -19,9 +19,10 @@
 #define UP_BUT 33
 #define DOWN_BUT 35
 
-//DHT22 Parameters
+// DHT22 Parameters
 #define DHTPIN 12
 
+extern String User; // User name
 
 // Function Prototypes
 String Stringify(int number); // Convert an integer to a 2 digit string always

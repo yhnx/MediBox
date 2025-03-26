@@ -2,7 +2,7 @@
 
 int current_mode = 0;
 int max_modes = 4;
-String modes[] = {"1: Set Time", "2: Set Alarm 1", "3: Set Alarm 2", "4: Disable Alarms"};
+String modes[] = {"Set Zone", "2: Set Alarm 1", "3: Set Alarm 2", "4: Disable Alarms"};
 
 bool CANCEL_PRESSED = false;
 
@@ -40,14 +40,14 @@ int button_pressed()
   }
 }
 
-void set_time() // Set new time manually
+void set_zone() // Set new zone manually
 {
 
   int temp_hour = 0;
   int temp_minute = 0;
 
-  print_line("Enter the time");
-  print_line("HH:MM", 2, 15, 15);
+  display.clearDisplay();
+  print_line("Enter new zone");
   delay(200);
 
   while (!CANCEL_PRESSED) // Loop until the user sets the hour
@@ -61,19 +61,18 @@ void set_time() // Set new time manually
     if (pressed == UP_BUT)
     {
       temp_hour++;
-      temp_hour = temp_hour % 24;
+      temp_hour = temp_hour % 12;
     }
     else if (pressed == DOWN_BUT)
     {
       temp_hour--;
-      if (temp_hour < 0)
+      if (temp_hour < -12)
       {
-        temp_hour = 23;
+        temp_hour = 0;
       }
     }
     else if (pressed == OK_BUT)
     {
-      hour = temp_hour;
       break;
     }
   }
@@ -102,14 +101,18 @@ void set_time() // Set new time manually
     }
     else if (pressed == OK_BUT)
     {
-      minute = temp_minute;
       break;
     }
   }
 
+  UTC_OFFSET = temp_hour * 60 * 60 + temp_minute * 60;
+
+  Serial.println(UTC_OFFSET);
+
   CANCEL_PRESSED = false;
-  print_line("Time set to " + String(hour) + ":" + String(minute));
-  delay(200);
+  print_line("Time Offset set to " + String(temp_hour) + ":" + String(temp_minute));
+  configTime(UTC_OFFSET, DST_OFFSET, NTP_SERVER);
+  delay(2000);
 }
 
 void set_alarm(int alarm_number) // Set new alarm manually
@@ -188,13 +191,13 @@ void run_mode(int mode)
   switch (mode)
   {
   case 0:
-    set_time();
+    set_zone();
     break;
   case 1:
   case 2:
     set_alarm(mode - 1);
     break;
-  case 3:
+  case 4:
     alarms_activated = !alarms_activated;
 
     print_line("Alarms Disabled");

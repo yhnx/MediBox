@@ -48,8 +48,7 @@ void print_current_time()
 
 void print_current_time_day()
 {
-  print_current_time();
-  print_time(Stringify(day) + "/" + Stringify(month), 2, 35, 35);
+  print_time(Stringify(hour) + ":" + Stringify(minute) + ":" + Stringify(second) + "              " + Stringify(day) + "/" + Stringify(month), 2, 16, 12);
 }
 
 // Function to automatically update the current time
