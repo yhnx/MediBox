@@ -48,7 +48,19 @@ void print_current_time()
 
 void print_current_time_day()
 {
-  print_time(Stringify(hour) + ":" + Stringify(minute) + ":" + Stringify(second) + "              " + Stringify(day) + "/" + Stringify(month), 2, 16, 12);
+  // Array of month names
+  const char *month_names[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+  // Get the current month's name
+  String month_name = month_names[month - 1]; // Subtract 1 because array indexing starts at 0
+
+  // Format and print the time and date
+  String time = Stringify(hour) + ":" + Stringify(minute) + ":" + Stringify(second);
+  String date = month_name + " " + Stringify(day);
+
+  String time_date[] = {time, date};
+
+  print_multi_line(time_date, 2, 2, 12);
 }
 
 // Function to automatically update the current time

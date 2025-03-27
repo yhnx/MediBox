@@ -2,7 +2,7 @@
 
 int current_mode = 0;
 int max_modes = 4;
-String modes[] = {"Set Zone", "2: Set Alarm 1", "3: Set Alarm 2", "4: Disable Alarms"};
+String modes[][2] = {{"Set", "Zone"}, {"Set Alarm", "1"}, {"Set Alarm", "2"}, {"Disable", "Alarms"}};
 
 bool CANCEL_PRESSED = false;
 
@@ -47,14 +47,17 @@ void set_zone() // Set new zone manually
   int temp_minute = 0;
 
   display.clearDisplay();
-  print_line("Enter new zone");
-  delay(200);
+  String load_message[] = {"Enter New", "Time Zone"};
+  print_multi_line(load_message, 2, 2, 7);
+  delay(1000);
+  display.clearDisplay();
 
   while (!CANCEL_PRESSED) // Loop until the user sets the hour
   {
     display.clearDisplay();
 
-    print_line("Enter Hour:" + String(temp_hour));
+    String enter_hour[] = {"Enter Hour", String(temp_hour)};
+    print_multi_line(enter_hour, 2, 2, 7);
 
     int pressed = button_pressed();
 
@@ -82,13 +85,14 @@ void set_zone() // Set new zone manually
   {
     display.clearDisplay();
 
-    print_line("Enter Minutes:" + String(temp_minute));
+    String enter_min[] = {"Enter Mins", String(temp_minute)};
+    print_multi_line(enter_min, 2, 2, 7);
 
     int pressed = button_pressed();
 
     if (pressed == UP_BUT)
     {
-      temp_minute++;
+      temp_minute += 15;
       temp_minute = temp_minute % 60;
     }
     else if (pressed == DOWN_BUT)
@@ -110,7 +114,10 @@ void set_zone() // Set new zone manually
   Serial.println(UTC_OFFSET);
 
   CANCEL_PRESSED = false;
-  print_line("Time Offset set to " + String(temp_hour) + ":" + String(temp_minute));
+
+  String message[] = {"Offset is", String(temp_hour) + ":" + String(temp_minute)};
+  print_multi_line(message, 2, 2, 7);
+
   configTime(UTC_OFFSET, DST_OFFSET, NTP_SERVER);
   delay(2000);
 }
@@ -120,15 +127,14 @@ void set_alarm(int alarm_number) // Set new alarm manually
   int temp_hour = 0;
   int temp_minute = 0;
 
-  print_line("Change Alarm " + Stringify(alarm_number + 1));
-  print_line("HH:MM", 2, 15, 15);
-  delay(200);
+  display.clearDisplay();
 
   while (!CANCEL_PRESSED) // Loop until the user sets the hour
   {
     display.clearDisplay();
 
-    print_line("Enter Hour:" + String(temp_hour));
+    String enter_hour[] = {"Enter Hour", String(temp_hour)};
+    print_multi_line(enter_hour, 2, 2, 7);
 
     int pressed = button_pressed();
 
@@ -157,7 +163,8 @@ void set_alarm(int alarm_number) // Set new alarm manually
   {
     display.clearDisplay();
 
-    print_line("Enter Minutes:" + String(temp_minute));
+    String enter_min[] = {"Enter Mins", String(temp_minute)};
+    print_multi_line(enter_min, 2, 2, 7);
 
     int pressed = button_pressed();
 
@@ -182,8 +189,8 @@ void set_alarm(int alarm_number) // Set new alarm manually
   }
 
   CANCEL_PRESSED = false;
-  print_line("Alarm " + String(alarm_number) + " set to " + String(temp_hour) + ":" + String(temp_minute));
-  delay(200);
+  String message[] = {"Set to ", String(temp_hour) + ":" + String(temp_minute)};
+  print_multi_line(message, 2, 2, 7);
 }
 
 void run_mode(int mode)
@@ -214,7 +221,7 @@ void go_to_menu()
   while (!CANCEL_PRESSED)
   {
     display.clearDisplay();
-    print_line(modes[current_mode]);
+    print_multi_line(modes[current_mode], 2, 2, 12);
 
     int pressed = button_pressed();
 
@@ -234,7 +241,6 @@ void go_to_menu()
     }
     else if (pressed == OK_BUT)
     {
-      Serial.println(modes[current_mode]);
       run_mode(current_mode);
     }
   }
