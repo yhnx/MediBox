@@ -22,6 +22,20 @@
       "attrs": { "value": "100" }
     },
     {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 226.8,
+      "left": 234.2,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 272.75,
+      "left": 259.2,
+      "attrs": { "value": "220" }
+    },
+    {
       "type": "wokwi-pushbutton",
       "id": "btn1",
       "top": 272.3,
@@ -58,7 +72,7 @@
       "top": 272.3,
       "left": -194.5,
       "rotate": 90,
-      "attrs": { "color": "blue", "label": "OK/MENU" }
+      "attrs": { "color": "blue", "label": "OK/MENUE" }
     },
     {
       "type": "wokwi-resistor",
@@ -109,7 +123,9 @@
     [ "esp:3V3", "bb1:tp.49", "red", [ "h193.91", "v148.98" ] ],
     [ "esp:GND.1", "bb1:tn.48", "black", [ "h0" ] ],
     [ "bb1:46t.d", "esp:D5", "gold", [ "v0" ] ],
+    [ "bb1:26t.e", "bb1:tn.19", "black", [ "h-18.01", "v-67.1" ] ],
     [ "bb1:tn.28", "bb1:39t.e", "black", [ "h0.04", "v67.1" ] ],
+    [ "bb1:33t.d", "esp:D15", "limegreen", [ "h0.11", "v-156.37", "h86.12", "v-79.11" ] ],
     [ "bb1:10t.c", "esp:D34", "cyan", [ "v0" ] ],
     [ "bb1:4b.i", "bb1:bp.2", "red", [ "h-4.77", "v39.3" ] ],
     [ "bb1:tp.1", "bb2:tp.25", "red", [ "v0" ] ],
@@ -137,6 +153,10 @@
     [ "bz1:2", "bb1:40t.d", "", [ "$bb" ] ],
     [ "r1:1", "bb1:40t.e", "", [ "$bb" ] ],
     [ "r1:2", "bb1:46t.e", "", [ "$bb" ] ],
+    [ "led1:A", "bb1:27t.d", "", [ "$bb" ] ],
+    [ "led1:C", "bb1:26t.d", "", [ "$bb" ] ],
+    [ "r2:1", "bb1:27t.e", "", [ "$bb" ] ],
+    [ "r2:2", "bb1:33t.e", "", [ "$bb" ] ],
     [ "btn1:1.l", "bb1:12t.d", "", [ "$bb" ] ],
     [ "btn1:2.l", "bb1:10t.d", "", [ "$bb" ] ],
     [ "btn1:1.r", "bb1:12b.i", "", [ "$bb" ] ],

@@ -16,13 +16,14 @@ int month = 0;
 long timeNow;
 long timeLast;
 
-bool alarms_activated = true;
+bool alarms_activated[] = {true, true};
 int num_alarms = 2;
-int alarm_hours[] = {0, 1};
+int alarm_hours[] = {12, 1};
 int alarm_minutes[] = {1, 20};
 bool alarm_triggered[] = {false, false};
 
 volatile bool off_the_alarm = false;
+volatile bool snoozed = false;
 
 // Note variable
 int n_notes = 8;
@@ -36,9 +37,29 @@ int B = 494;
 int C_H = 523;
 int notes[] = {C, D, E, F, G, A, B, C_H};
 
+volatile int al_num = -1; // alarm number
+
 void IRAM_ATTR InterruptIt()
 {
   off_the_alarm = true;
+}
+
+void IRAM_ATTR InterruptSnooze()
+{
+
+  alarm_minutes[al_num] += 5;
+  if (alarm_minutes[al_num] >= 60)
+  {
+    alarm_minutes[al_num] -= 60;
+    alarm_hours[al_num] = (alarm_hours[al_num] + 1) % 24;
+  }
+
+  al_num = -1;
+  snoozed = true;
+
+  display.clearDisplay();
+  print_line("Snoozed", 2, 15, 15);
+  delay(2000);
 }
 
 void print_current_time()
@@ -94,10 +115,11 @@ void ring_alarm()
 {
   display.clearDisplay();
 
-  while (!off_the_alarm) // cancelled variable added for extra robustness
+  while (!off_the_alarm && !snoozed) // cancelled variable added for extra robustness
   {
 
-    print_line("MEDICINE TIME", 2, 15, 15);
+    String medicine[] = {"TAKE", "MEDS"};
+    print_multi_line(medicine, 2, 3, 7);
     digitalWrite(GREEN_LED, HIGH);
 
     for (int i = 0; i < n_notes; i++)
@@ -107,6 +129,11 @@ void ring_alarm()
       delay(500);
       noTone(BUZZER);
       delay(2);
+      if (digitalRead(OK_BUT) == LOW)
+      {
+        InterruptSnooze();
+        break;
+      }
     }
 
     // settling stuff down
@@ -121,23 +148,27 @@ void check_alarm() // while updating time
   update_time();
   print_current_time_day();
 
-  if (alarms_activated)
+  for (int i = 0; i < num_alarms; i++)
   {
-    for (int i = 0; i < num_alarms; i++)
+    if (alarms_activated[i] && !alarm_triggered[i] && alarm_hours[i] == hour && alarm_minutes[i] == minute)
     {
-      if (!alarm_triggered[i] && alarm_hours[i] == hour && alarm_minutes[i] == minute)
+      attachInterrupt(digitalPinToInterrupt(CANCEL_BUT), InterruptIt, RISING); // Configure the interrupt
+
+      al_num = i; // Set the alarm number to the current alarm
+
+      ring_alarm();
+
+      // stopping the alarm from ringing further using the cancel button
+      if (off_the_alarm)
       {
-        attachInterrupt(digitalPinToInterrupt(CANCEL_BUT), InterruptIt, RISING); // Configure the interrupt
-
-        ring_alarm();
-
-        // stopping the alarm from ringing further using the cancel button
-        if (off_the_alarm)
-        {
-          alarm_triggered[i] = true;
-          off_the_alarm = false;
-          detachInterrupt(digitalPinToInterrupt(CANCEL_BUT)); // Disable the interrupt
-        }
+        alarm_triggered[i] = true;
+        off_the_alarm = false;
+        detachInterrupt(digitalPinToInterrupt(CANCEL_BUT)); // Disable the interrupt
+      }
+      // stopping the alarm from ringing further using the snooze button
+      if (snoozed)
+      {
+        snoozed = false;
       }
     }
   }

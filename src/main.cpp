@@ -11,6 +11,7 @@ void setup()
   // Pin setup
   pinMode(BUZZER, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
   pinMode(CANCEL_BUT, INPUT);
   pinMode(OK_BUT, INPUT);
   pinMode(UP_BUT, INPUT);

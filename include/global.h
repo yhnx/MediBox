@@ -12,6 +12,7 @@
 // Alarm Parameters
 #define BUZZER 5
 #define GREEN_LED 15
+#define RED_LED 2
 
 // Button Parameters
 #define CANCEL_BUT 34
