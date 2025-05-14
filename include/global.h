@@ -23,6 +23,12 @@
 // DHT22 Parameters
 #define DHTPIN 12
 
+// Servo Parameters
+#define SERVO_PIN 23
+
+// LDR Parameters
+#define LDR_PIN 39
+
 extern String User; // User name
 
 // Function Prototypes
