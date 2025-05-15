@@ -26,15 +26,15 @@ const char *controlfactor_topic = "medibox220046R/controlfactor";
 const char *tempset_topic = "medibox220046R/tempset";
 
 // LDR and servo parameters
-#define MAX_LDR_VALUE 4095 // ESP32 ADC resolution (12-bit)
+#define MAX_LDR_VALUE 4095 // resolution for 12-bit
 #define MIN_LDR_VALUE 0
 
 // Default configuration values
 float sampling_interval = 5.0;  // seconds
-float sending_interval = 120.0; // seconds (2 minutes)
-float theta_offset = 30.0;      // degrees
-float gammah = 0.75;            // controlling factor
-float T_med = 30.0;             // ideal storage temperature (°C)
+float sending_interval = 120.0; // for 2 minutes
+float theta_offset = 30.0;
+float gammah = 0.75;
+float T_med = 30.0;
 
 // Variables for LDR averaging
 float ldr_readings_sum = 0.0;
@@ -42,14 +42,13 @@ int ldr_readings_count = 0;
 unsigned long last_sample_time = 0;
 unsigned long last_send_time = 0;
 
-// Servo object
+// Servo object from ESP32Servo library
 Servo servo;
 
-// WiFi and MQTT clients
+// WiFi and MQTT clients from PubSubClient library
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// Function to connect to WiFi
 void setup_wifi()
 {
   delay(10);
@@ -66,7 +65,7 @@ void setup_wifi()
   display.clearDisplay();
 }
 
-// MQTT callback function
+// callback function for MQTT messages
 void callback(char *topic, byte *payload, unsigned int length)
 {
   String message;
@@ -78,23 +77,23 @@ void callback(char *topic, byte *payload, unsigned int length)
 
   if (String(topic) == sampling_topic)
   {
-    sampling_interval = value;
+    sampling_interval = constrain(value, 1.0, 60.0); // Limiting to reasonable range
   }
   else if (String(topic) == sending_topic)
   {
-    sending_interval = value * 60.0; // Convert minutes to seconds
+    sending_interval = constrain(value, 30.0, 600.0); // Limiting to 30s–10min
   }
   else if (String(topic) == offset_topic)
   {
-    theta_offset = value;
+    theta_offset = constrain(value, 0.0, 120.0);
   }
   else if (String(topic) == controlfactor_topic)
   {
-    gammah = value;
+    gammah = constrain(value, 0.0, 1.0);
   }
   else if (String(topic) == tempset_topic)
   {
-    T_med = value;
+    T_med = constrain(value, 10.0, 40.0);
   }
 }
 
@@ -118,6 +117,68 @@ void reconnect()
     {
       delay(5000);
     }
+  }
+}
+
+void check_temp()
+{
+  static unsigned long last_temp_time = 0;
+  if (millis() - last_temp_time >= 5000)
+  { // Reading every 5 seconds
+    TempAndHumidity data = dhtSensor.getTempAndHumidity();
+    if (!isnan(data.temperature))
+    {
+      char temp_str[8];
+      dtostrf(data.temperature, 6, 2, temp_str);
+      client.publish(temp_topic, temp_str);
+    }
+    last_temp_time = millis();
+  }
+}
+
+void read_ldr()
+{
+  if (millis() - last_sample_time >= sampling_interval * 1000)
+  {
+    int ldr_raw = analogRead(LDR_PIN);
+    // Normalize LDR value to 0–1 (inversion)
+    float intensity = 1.0 - ((float)ldr_raw - MIN_LDR_VALUE) / (MAX_LDR_VALUE - MIN_LDR_VALUE);
+    intensity = constrain(intensity, 0.0, 1.0);
+
+    ldr_readings_sum += intensity;
+    ldr_readings_count++;
+    last_sample_time = millis();
+  }
+}
+
+void send_average_intensity()
+{
+  if (millis() - last_send_time >= sending_interval * 1000 && ldr_readings_count > 0)
+  {
+    float average_intensity = ldr_readings_sum / ldr_readings_count;
+    char intensity_str[8];
+    dtostrf(average_intensity, 6, 4, intensity_str);
+    client.publish(intensity_topic, intensity_str);
+
+    // Reseting them
+    ldr_readings_sum = 0.0;
+    ldr_readings_count = 0;
+    last_send_time = millis();
+  }
+}
+
+void adjust_servo()
+{
+  TempAndHumidity data = dhtSensor.getTempAndHumidity();
+  if (!isnan(data.temperature) && ldr_readings_count > 0)
+  {
+    float I = ldr_readings_sum / ldr_readings_count; // the current average intensity
+    float T = data.temperature;
+
+    // Servo angle calculation
+    float theta = theta_offset + (180.0 - theta_offset) * I * gammah * log(sampling_interval / sending_interval) * (T / T_med);
+    theta = constrain(theta, 0.0, 180.0); // Ensure angle is within 180 degrees
+    servo.write((int)theta);
   }
 }
 
@@ -160,66 +221,6 @@ void setup()
   // Configure time
   configTime(UTC_OFFSET, DST_OFFSET, NTP_SERVER);
   update_time();
-}
-
-void check_temp()
-{
-  static unsigned long last_temp_time = 0;
-  if (millis() - last_temp_time >= 5000)
-  { // Read every 5 seconds
-    TempAndHumidity data = dhtSensor.getTempAndHumidity();
-    if (!isnan(data.temperature))
-    {
-      char temp_str[8];
-      dtostrf(data.temperature, 6, 2, temp_str);
-      client.publish(temp_topic, temp_str);
-    }
-    last_temp_time = millis();
-  }
-}
-
-void read_ldr()
-{
-  if (millis() - last_sample_time >= sampling_interval * 1000)
-  {
-    int ldr_raw = analogRead(LDR_PIN);
-    // Normalize LDR value to 0–1 (inverted, as higher ADC value means lower light)
-    float intensity = 1.0 - ((float)ldr_raw - MIN_LDR_VALUE) / (MAX_LDR_VALUE - MIN_LDR_VALUE);
-    intensity = constrain(intensity, 0.0, 1.0);
-
-    ldr_readings_sum += intensity;
-    ldr_readings_count++;
-    last_sample_time = millis();
-  }
-}
-
-void send_average_intensity()
-{
-  if (millis() - last_send_time >= sending_interval * 1000 && ldr_readings_count > 0)
-  {
-    float average_intensity = ldr_readings_sum / ldr_readings_count;
-    char intensity_str[8];
-    dtostrf(average_intensity, 6, 4, intensity_str);
-    client.publish(intensity_topic, intensity_str);
-
-    // Reset averaging
-    ldr_readings_sum = 0.0;
-    ldr_readings_count = 0;
-    last_send_time = millis();
-  }
-}
-
-void adjust_servo()
-{
-  TempAndHumidity data = dhtSensor.getTempAndHumidity();
-  if (!isnan(data.temperature) && ldr_readings_count > 0)
-  {
-    float I = ldr_readings_sum / ldr_readings_count; // Current average intensity
-    float T = data.temperature;
-    float theta = theta_offset + (180.0 - theta_offset) * I * gammah * log(sampling_interval / sending_interval) * (T / T_med);
-    theta = constrain(theta, 0.0, 180.0); // Ensure angle is within 0–180 degrees
-    servo.write((int)theta);
-  }
 }
 
 void loop()
